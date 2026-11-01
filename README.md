@@ -26,9 +26,9 @@ ntt_i32 written = ntt_write_f64( value, output );
 
 ## The name
 
-The *Three* in the name isn't a version number. It marks a generation, and the generations count down: after NumberTextThree comes NumberTextTwo, then NumberTextOne.
+The *Three* in the name isn't a version number. It marks a generation, and the generations count down: after NumberTextThree comes NumberTextTwo, and then NumberTextOne, which will be the final generation.
 
-Each generation has its own header, prefix and CMake target, so two generations can live side by side in one program. For this one they are `NumberTextThree.h`, `ntt_`, `NUMBERTEXTTHREE_` and `NumberTextThree::NumberTextThree`. The prefixes of the later generations are already decided, so they can never collide: `ntw_` for Two, `nto_` for One and `nt_` for plain NumberText. Within a generation, releases follow semantic versioning, and this is NumberTextThree 1.0.0.
+Each generation has its own header, prefix and CMake target, so two generations can live side by side in one program. For this one they are `NumberTextThree.h`, `ntt_`, `NUMBERTEXTTHREE_` and `NumberTextThree::NumberTextThree`. The prefixes of the later generations are already decided, so they can never collide: `ntw_` for Two and `nto_` for One. Within a generation, releases follow semantic versioning, and this is NumberTextThree 1.0.0.
 
 ## API
 
