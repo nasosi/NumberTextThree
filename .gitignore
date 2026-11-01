@@ -1,0 +1,13 @@
+out/
+build/
+.vs/
+*.pdb
+*.ilk
+*.obj
+*.o
+*.exe
+.env
+*_key
+*.key
+*.pem
+Secrets/

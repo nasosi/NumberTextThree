@@ -1,0 +1,113 @@
+cmake_minimum_required( VERSION 3.15 )
+
+project( NumberTextThree VERSION 1.0.0 LANGUAGES C CXX )
+
+add_library( NumberTextThree INTERFACE )
+add_library( NumberTextThree::NumberTextThree ALIAS NumberTextThree )
+target_include_directories( NumberTextThree INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> )
+
+if ( CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR )
+
+    option( NumberTextThreeEnableSanitizers "Build the tests with the address and undefined behavior sanitizers" No )
+
+    if ( NumberTextThreeEnableSanitizers )
+        if ( MSVC )
+            add_compile_options( /fsanitize=address /Zi )
+        else()
+            add_compile_options( -fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=undefined )
+            add_link_options( -fsanitize=address,undefined )
+        endif()
+    endif()
+
+    enable_testing()
+
+    add_executable( CheckDouble Tests/CheckDouble.cpp Tests/SecondUnit.cpp )
+    set_source_files_properties( Tests/SecondUnit.cpp PROPERTIES COMPILE_DEFINITIONS NUMBERTEXTTHREE_NO_SIMD )
+    target_link_libraries( CheckDouble PRIVATE NumberTextThree::NumberTextThree )
+    target_compile_features( CheckDouble PRIVATE cxx_std_17 )
+
+    add_executable( CompileC Tests/CompileC.c )
+    target_link_libraries( CompileC PRIVATE NumberTextThree::NumberTextThree )
+    set_target_properties( CompileC PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF )
+
+    if ( MSVC )
+        target_compile_options( CheckDouble PRIVATE /W4 /WX )
+        target_compile_definitions( CheckDouble PRIVATE _CRT_SECURE_NO_WARNINGS )
+        target_compile_options( CompileC PRIVATE /W4 /WX )
+    else()
+        target_compile_options( CheckDouble PRIVATE -Wall -Wextra -Wpedantic -Werror )
+        target_compile_options( CompileC PRIVATE -Wall -Wextra -Wpedantic -Werror )
+    endif()
+
+    add_executable( CheckDoublePortable Tests/CheckDouble.cpp Tests/SecondUnit.cpp )
+    target_link_libraries( CheckDoublePortable PRIVATE NumberTextThree::NumberTextThree )
+    target_compile_features( CheckDoublePortable PRIVATE cxx_std_17 )
+    target_compile_definitions( CheckDoublePortable PRIVATE NUMBERTEXTTHREE_NO_INTRINSICS )
+
+    if ( MSVC )
+        target_compile_options( CheckDoublePortable PRIVATE /W4 /WX )
+        target_compile_definitions( CheckDoublePortable PRIVATE _CRT_SECURE_NO_WARNINGS )
+    else()
+        target_compile_options( CheckDoublePortable PRIVATE -Wall -Wextra -Wpedantic -Werror )
+    endif()
+
+    add_executable( CheckFloat Tests/CheckFloat.cpp )
+    target_link_libraries( CheckFloat PRIVATE NumberTextThree::NumberTextThree )
+    target_compile_features( CheckFloat PRIVATE cxx_std_17 )
+
+    if ( MSVC )
+        target_compile_options( CheckFloat PRIVATE /W4 /WX )
+        target_compile_definitions( CheckFloat PRIVATE _CRT_SECURE_NO_WARNINGS )
+    else()
+        target_compile_options( CheckFloat PRIVATE -Wall -Wextra -Wpedantic -Werror )
+        target_link_libraries( CheckFloat PRIVATE pthread )
+    endif()
+
+    add_executable( CheckFloatPortable Tests/CheckFloat.cpp )
+    target_link_libraries( CheckFloatPortable PRIVATE NumberTextThree::NumberTextThree )
+    target_compile_features( CheckFloatPortable PRIVATE cxx_std_17 )
+    target_compile_definitions( CheckFloatPortable PRIVATE NUMBERTEXTTHREE_NO_INTRINSICS )
+
+    if ( MSVC )
+        target_compile_options( CheckFloatPortable PRIVATE /W4 /WX )
+        target_compile_definitions( CheckFloatPortable PRIVATE _CRT_SECURE_NO_WARNINGS )
+    else()
+        target_compile_options( CheckFloatPortable PRIVATE -Wall -Wextra -Wpedantic -Werror )
+        target_link_libraries( CheckFloatPortable PRIVATE pthread )
+    endif()
+
+    add_executable( CompileCPortable Tests/CompileC.c )
+    target_link_libraries( CompileCPortable PRIVATE NumberTextThree::NumberTextThree )
+    target_compile_definitions( CompileCPortable PRIVATE NUMBERTEXTTHREE_NO_INTRINSICS )
+    set_target_properties( CompileCPortable PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF )
+
+    if ( MSVC )
+        target_compile_options( CompileCPortable PRIVATE /W4 /WX )
+    else()
+        target_compile_options( CompileCPortable PRIVATE -Wall -Wextra -Wpedantic -Werror )
+    endif()
+
+    foreach ( example RoundTrip CustomGrammar )
+        add_executable( ${example} Examples/${example}.c )
+        target_link_libraries( ${example} PRIVATE NumberTextThree::NumberTextThree )
+        set_target_properties( ${example} PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF )
+
+        if ( MSVC )
+            target_compile_options( ${example} PRIVATE /W4 /WX )
+        else()
+            target_compile_options( ${example} PRIVATE -Wall -Wextra -Wpedantic -Werror )
+        endif()
+    endforeach()
+
+    add_test( NAME CheckDouble COMMAND CheckDouble )
+    add_test( NAME CheckFloat COMMAND CheckFloat )
+    add_test( NAME CheckDoublePortable COMMAND CheckDoublePortable 50000 )
+    add_test( NAME CompileC COMMAND CompileC )
+    add_test( NAME CheckFloatPortable COMMAND CheckFloatPortable 100000 )
+    add_test( NAME CompileCPortable COMMAND CompileCPortable )
+    add_test( NAME RoundTrip COMMAND RoundTrip 0.1 1e23 1e400 12abc )
+    set_tests_properties( RoundTrip PROPERTIES PASS_REGULAR_EXPRESSION "1e23 +1e\\+23.*1e400 +out of range.*12abc +not a JSON number" )
+    add_test( NAME CustomGrammar COMMAND CustomGrammar )
+    set_tests_properties( CustomGrammar PROPERTIES PASS_REGULAR_EXPRESSION "\\+1_000_000 +double 1000000 +float 1000000.*\\.5 +double 0\\.5" )
+
+endif()
