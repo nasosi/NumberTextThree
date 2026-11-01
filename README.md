@@ -9,12 +9,6 @@ What it aims for:
 - No dependencies. In hosted builds the only includes are `<emmintrin.h>` on x86 and `<arm_neon.h>` on ARM64, and you can switch those off with `NUMBERTEXTTHREE_NO_SIMD`. The library doesn't allocate, keeps no global state and throws no exceptions, and every function is thread-safe.
 - Portability. It compiles as C99 and as C++ with MSVC, gcc and clang, for 32-bit and 64-bit targets. All it needs is IEEE 754 doubles and floats and 64-bit integers. Because it uses integer arithmetic only, the results don't depend on the floating-point mode, so settings like `/fp:fast` can't change them.
 
-## The name
-
-The *Three* in the name isn't a version number. It marks a generation, and the generations count down: after NumberTextThree comes NumberTextTwo, then NumberTextOne, and finally plain NumberText, which is meant to be the final form. A new generation starts only when the design has changed enough to deserve a fresh start, not with every release.
-
-Each generation has its own header, prefix and CMake target, so two generations can live side by side in one program. For this one they are `NumberTextThree.h`, `ntt_`, `NUMBERTEXTTHREE_` and `NumberTextThree::NumberTextThree`. The prefixes of the later generations are already decided, so they can never collide: `ntw_` for Two, `nto_` for One and `nt_` for plain NumberText. Within a generation, releases follow semantic versioning, and this is NumberTextThree 1.0.0.
-
 ## Using it
 
 The simplest way is to copy `NumberTextThree.h` into your project and include it. If you use CMake, you can also bring in this repository with `add_subdirectory` or `FetchContent` and link to the `NumberTextThree::NumberTextThree` target. The version is available at compile time as `NUMBERTEXTTHREE_VERSION_MAJOR`, `NUMBERTEXTTHREE_VERSION_MINOR` and `NUMBERTEXTTHREE_VERSION_PATCH`.
@@ -29,6 +23,12 @@ ntt_status  status = ntt_parse_json_f64( text, text + length, &value, &stop );
 char    output[ NUMBERTEXTTHREE_F64_MAX_CHARS ];
 ntt_i32 written = ntt_write_f64( value, output );
 ```
+
+## The name
+
+The *Three* in the name isn't a version number. It marks a generation, and the generations count down: after NumberTextThree comes NumberTextTwo, then NumberTextOne.
+
+Each generation has its own header, prefix and CMake target, so two generations can live side by side in one program. For this one they are `NumberTextThree.h`, `ntt_`, `NUMBERTEXTTHREE_` and `NumberTextThree::NumberTextThree`. The prefixes of the later generations are already decided, so they can never collide: `ntw_` for Two, `nto_` for One and `nt_` for plain NumberText. Within a generation, releases follow semantic versioning, and this is NumberTextThree 1.0.0.
 
 ## API
 
@@ -46,7 +46,7 @@ You can pass a null `stop` if you don't need it.
 
 ### `ntt_status ntt_decimal_to_f64( const ntt_decimal* decimal, double* value )`
 
-This one is for formats with a number syntax of their own. Your parser collects the digits and the exponent, and this function does the rounding.
+This one is for formats with a number syntax of their own. Your parser collects the digits and the exponent, and this function performs the rounding.
 
 ```c
 typedef struct ntt_decimal
@@ -98,9 +98,9 @@ Each of these writes the decimal digits of `value`, with a leading `-` for negat
 
 ## How it works
 
-Reading uses the Eisel–Lemire algorithm, from Daniel Lemire's *Number Parsing at a Gigabyte per Second* (2021). Up to 19 significant digits are multiplied by a 128-bit approximation of the matching power of five, and in almost every case that one product is enough to decide the correctly rounded result. Longer inputs, extreme exponents, subnormal results and the rare ambiguous products go to an exact conversion that works with big integers.
+Reading uses the Eisel–Lemire algorithm, from Daniel Lemire's *Number Parsing at a Gigabyte per Second* (2021). Up to 19 significant digits are multiplied by a 128-bit approximation of the matching power of five, and in almost every case that one product is enough to decide the correctly rounded result. Longer inputs, extreme exponents, subnormal results, and the rare ambiguous products go to an exact conversion that works with big integers.
 
-Writing uses Dragonbox, from Junekey Jeon's *Dragonbox: A New Floating-Point Binary-to-Decimal Conversion Algorithm* (2020). The upper end of the value's rounding interval is multiplied once by a 128-bit power of ten, taken from the same table the reader uses. Dividing the result by 1000 gives a quotient and a remainder, and between them they tell us the shortest digits that read back, and the closest ones when there is more than one candidate. A second, partial product is needed only in the rare cases where the remainder lands right on the end of the interval or the next digit could be a tie. Powers of two are handled a little differently, because there the gap to the next value below is half the gap above, and the ends of the interval can be read off the power of ten. Every finite double goes through this path except zero and whole numbers below 2^53, which are simply written as integers.
+Writing uses Dragonbox, from Junekey Jeon's *Dragonbox: A New Floating-Point Binary-to-Decimal Conversion Algorithm* (2020). The upper end of the value's rounding interval is multiplied once by a 128-bit power of ten, taken from the same table the reader uses. Dividing the result by 1000 gives a quotient and a remainder, and between them they tell the shortest digits that read back, and the closest ones when there is more than one candidate. A second, partial product is needed only in the rare cases where the remainder lands right on the end of the interval or the next digit could be a tie. Powers of two are handled a little differently, because there the gap to the next value below is half the gap above, and the ends of the interval can be read off the power of ten. Every finite double goes through this path except zero and whole numbers below 2^53, which are simply written as integers.
 
 The writer also avoids moving digits around. It converts the leading digits while the last digit is still being decided and puts them where the final layout wants them, so only the few digits in front of the decimal point ever have to move.
 
@@ -168,4 +168,4 @@ You can use NumberTextThree under either of two licenses, whichever you prefer (
 - CC0 1.0 Universal. To the extent possible under law, Athanasios Iliopoulos has waived all copyright and related or neighboring rights to NumberTextThree. This work is published from: United States. See `LICENSE-CC0`.
 - The BSD Zero Clause License (0BSD), for organizations and distributions that prefer an OSI-approved license. See `LICENSE-0BSD`.
 
-Either way you can use it for anything, and you don't owe anything, not even a credit. If it helps you, I'd appreciate a mention in your credits or a link back here, but that's entirely up to you.
+Either way, you can use it for anything, and you don't owe anything, not even a credit. If it helps you, I'd appreciate a mention in your credits or a link back here, but that's entirely up to you.
